@@ -1,7 +1,6 @@
 package com.builtbroken.mc.patch;
 
 import net.minecraft.launchwrapper.IClassTransformer;
-import net.minecraft.tileentity.TileEntity;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
@@ -31,7 +30,7 @@ public class ClassTransformer implements IClassTransformer
         return bytes;
     }
 
-    /** Fixed {@link TileEntity#invalidate()} causing inf loops on chunk edges */
+    /** Fixed {@link net.minecraft.tileentity.TileEntityChest#invalidate()} causing inf loops on chunk edges */
     private void injectInvalidateEdit(ClassNode cn)
     {
         final MethodNode method = getMethod(cn, "invalidate", "()V");
