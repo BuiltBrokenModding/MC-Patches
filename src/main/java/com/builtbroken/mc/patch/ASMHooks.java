@@ -23,54 +23,61 @@ public final class ASMHooks
      */
     public static void chestInvalidate(TileEntityChest chest)
     {
-        if (!chest.adjacentChestChecked)
+        try
         {
-            World world = chest.getWorldObj();
-            chest.adjacentChestChecked = true;
-            chest.adjacentChestZNeg = null;
-            chest.adjacentChestXPos = null;
-            chest.adjacentChestXNeg = null;
-            chest.adjacentChestZPos = null;
-
-            if (getBlock(chest, world, chest.xCoord - 1, chest.yCoord, chest.zCoord))
+            if (!chest.adjacentChestChecked)
             {
-                chest.adjacentChestXNeg = (TileEntityChest) world.getTileEntity(chest.xCoord - 1, chest.yCoord, chest.zCoord);
-            }
+                World world = chest.getWorldObj();
+                chest.adjacentChestChecked = true;
+                chest.adjacentChestZNeg = null;
+                chest.adjacentChestXPos = null;
+                chest.adjacentChestXNeg = null;
+                chest.adjacentChestZPos = null;
 
-            if (getBlock(chest, world, chest.xCoord + 1, chest.yCoord, chest.zCoord))
-            {
-                chest.adjacentChestXPos = (TileEntityChest) world.getTileEntity(chest.xCoord + 1, chest.yCoord, chest.zCoord);
-            }
+                if (getBlock(chest, world, chest.xCoord - 1, chest.yCoord, chest.zCoord))
+                {
+                    chest.adjacentChestXNeg = (TileEntityChest) world.getTileEntity(chest.xCoord - 1, chest.yCoord, chest.zCoord);
+                }
 
-            if (getBlock(chest, world, chest.xCoord, chest.yCoord, chest.zCoord - 1))
-            {
-                chest.adjacentChestZNeg = (TileEntityChest) world.getTileEntity(chest.xCoord, chest.yCoord, chest.zCoord - 1);
-            }
+                if (getBlock(chest, world, chest.xCoord + 1, chest.yCoord, chest.zCoord))
+                {
+                    chest.adjacentChestXPos = (TileEntityChest) world.getTileEntity(chest.xCoord + 1, chest.yCoord, chest.zCoord);
+                }
 
-            if (getBlock(chest, world, chest.xCoord, chest.yCoord, chest.zCoord + 1))
-            {
-                chest.adjacentChestZPos = (TileEntityChest) world.getTileEntity(chest.xCoord, chest.yCoord, chest.zCoord + 1);
-            }
+                if (getBlock(chest, world, chest.xCoord, chest.yCoord, chest.zCoord - 1))
+                {
+                    chest.adjacentChestZNeg = (TileEntityChest) world.getTileEntity(chest.xCoord, chest.yCoord, chest.zCoord - 1);
+                }
 
-            if (chest.adjacentChestZNeg != null)
-            {
-                chest.adjacentChestZNeg.adjacentChestChecked = false;
-            }
+                if (getBlock(chest, world, chest.xCoord, chest.yCoord, chest.zCoord + 1))
+                {
+                    chest.adjacentChestZPos = (TileEntityChest) world.getTileEntity(chest.xCoord, chest.yCoord, chest.zCoord + 1);
+                }
 
-            if (chest.adjacentChestZPos != null)
-            {
-                chest.adjacentChestZPos.adjacentChestChecked = false;
-            }
+                if (chest.adjacentChestZNeg != null)
+                {
+                    chest.adjacentChestZNeg.adjacentChestChecked = false;
+                }
 
-            if (chest.adjacentChestXPos != null)
-            {
-                chest.adjacentChestXPos.adjacentChestChecked = false;
-            }
+                if (chest.adjacentChestZPos != null)
+                {
+                    chest.adjacentChestZPos.adjacentChestChecked = false;
+                }
 
-            if (chest.adjacentChestXNeg != null)
-            {
-                chest.adjacentChestXNeg.adjacentChestChecked = false;
+                if (chest.adjacentChestXPos != null)
+                {
+                    chest.adjacentChestXPos.adjacentChestChecked = false;
+                }
+
+                if (chest.adjacentChestXNeg != null)
+                {
+                    chest.adjacentChestXNeg.adjacentChestChecked = false;
+                }
             }
+        }
+        catch (Exception e)
+        {
+            CoreMod.logger.error("Failed to do chest invalidation logic...", e);
         }
     }
 
