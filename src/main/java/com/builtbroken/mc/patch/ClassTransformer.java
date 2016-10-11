@@ -1,20 +1,26 @@
 package com.builtbroken.mc.patch;
 
+import net.minecraft.block.Block;
 import net.minecraft.launchwrapper.IClassTransformer;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
 
 import java.util.ListIterator;
 
+import static org.objectweb.asm.Opcodes.*;
+
 /**
+ * Handles transformation of several MC classes. See each method for information about what is edited.
+ *
  * @see <a href="https://github.com/BuiltBrokenModding/VoltzEngine/blob/development/license.md">License</a> for what you can and can't do with the code.
  * Created by Dark(DarkGuardsman, Robert) on 10/9/2016.
  */
-public class ClassTransformer implements IClassTransformer
+public final class ClassTransformer implements IClassTransformer
 {
+    /** {@link net.minecraft.tileentity.TileEntityChest} */
     private static final String CLASS_KEY_TILE_ENTITY = "net.minecraft.tileentity.TileEntityChest";
+    /** {@link net.minecraft.world.World} */
+    private static final String CLASS_KEY_WORLD = "net.minecraft.world.World";
+    /** {@link ASMHooks} */
     private static final String HOOK_CLASS = "com/builtbroken/mc/patch/ASMHooks";
 
 
@@ -23,74 +29,73 @@ public class ClassTransformer implements IClassTransformer
     {
         if (name.equals(CLASS_KEY_TILE_ENTITY))
         {
-            ClassNode cn = startInjection(bytes);
+            ClassNode cn = ASMUtility.startInjection(bytes);
             injectInvalidateEdit(cn);
-            return finishInjection(cn);
+            return ASMUtility.finishInjection(cn);
+        }
+        else if (name.equals(CLASS_KEY_WORLD))
+        {
+            ClassNode cn = ASMUtility.startInjection(bytes);
+            injectNotifyBlockOfNeighborChange(cn);
+            return ASMUtility.finishInjection(cn);
         }
         return bytes;
     }
 
-    /** Fixed {@link net.minecraft.tileentity.TileEntityChest#invalidate()} causing inf loops on chunk edges */
+    /** Fixes {@link net.minecraft.tileentity.TileEntityChest#invalidate()} causing inf loops on chunk edges */
     private void injectInvalidateEdit(ClassNode cn)
     {
-        final MethodNode method = getMethod(cn, "invalidate", "()V");
+        final MethodNode method = ASMUtility.getMethod(cn, "invalidate", "()V");
 
         if (method != null)
         {
             //Create method call
             final InsnList nodeAdd = new InsnList();
-            nodeAdd.add(new VarInsnNode(Opcodes.ALOAD, 0));
-            nodeAdd.add(new MethodInsnNode(Opcodes.INVOKESTATIC, HOOK_CLASS, "chestInvalidate", "(Lnet/minecraft/tileentity/TileEntityChest;)V", false));
+            nodeAdd.add(new VarInsnNode(ALOAD, 0));
+            nodeAdd.add(new MethodInsnNode(INVOKESTATIC, HOOK_CLASS, "chestInvalidate", "(Lnet/minecraft/tileentity/TileEntityChest;)V", false));
 
             //Inject method call at top of method
             ListIterator<AbstractInsnNode> it = method.instructions.iterator();
             MethodInsnNode checkForAdjacentChests = null;
-            while(it.hasNext())
+            while (it.hasNext())
             {
                 AbstractInsnNode node = it.next();
-                if(node instanceof MethodInsnNode)
+                if (node instanceof MethodInsnNode)
                 {
-                    if(((MethodInsnNode) node).name.equals("checkForAdjacentChests"))
+                    if (((MethodInsnNode) node).name.equals("checkForAdjacentChests"))
                     {
                         checkForAdjacentChests = (MethodInsnNode) node;
                     }
                 }
             }
-            if(checkForAdjacentChests != null)
+            if (checkForAdjacentChests != null)
             {
                 //Inject replacement
-                method.instructions.add(nodeAdd);
+                method.instructions.insertBefore(method.instructions.get(method.instructions.size() - 1), nodeAdd);
                 //Remove broken code
                 method.instructions.remove(checkForAdjacentChests);
             }
         }
     }
 
-    private ClassNode startInjection(byte[] bytes)
+    /** Fixes {@link net.minecraft.world.World#notifyBlockOfNeighborChange(int, int, int, Block)} causing chunks to load */
+    private void injectNotifyBlockOfNeighborChange(ClassNode cn)
     {
-        final ClassNode node = new ClassNode();
-        final ClassReader reader = new ClassReader(bytes);
-        reader.accept(node, 0);
+        final MethodNode method = ASMUtility.getMethod(cn, "notifyBlockOfNeighborChange", "(IIILnet/minecraft/block/Block;)V");
 
-        return node;
-    }
-
-    private byte[] finishInjection(ClassNode node)
-    {
-        final ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        node.accept(writer);
-        return writer.toByteArray();
-    }
-
-    private MethodNode getMethod(ClassNode node, String name, String sig)
-    {
-        for (MethodNode methodNode : node.methods)
+        if (method != null)
         {
-            if (methodNode.name.equals(name) && methodNode.desc.equals(sig))
-            {
-                return methodNode;
-            }
+            final InsnList edit = new InsnList();
+            edit.add(new VarInsnNode(ALOAD, 0));
+            edit.add(new VarInsnNode(ILOAD, 1)); //TODO update as needed
+            edit.add(new VarInsnNode(ILOAD, 2));
+            edit.add(new VarInsnNode(ILOAD, 3));
+            edit.add(new VarInsnNode(ALOAD, 4));
+            edit.add(new MethodInsnNode(INVOKESTATIC, HOOK_CLASS, "notifyBlockOfNeighborChange", "(Lnet/minecraft/world/World;IIILnet/minecraft/block/Block;)V", false));
+            edit.add(new InsnNode(RETURN));
+            MethodInsnNode m = ASMUtility.getMethodeNode(method, "onNeighborBlockChange");
+            method.instructions.insertBefore(m, edit);
+            method.instructions.remove(m);
         }
-        return null;
     }
 }
