@@ -1,2 +1,6 @@
 *.iml
 runMCPatches/
+.gradle/
+CompiledWith.txt
+MC-Patch.txt
+output/
