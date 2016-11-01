@@ -49,6 +49,6 @@ jacocoTestReport {
 
 jar {
      manifest.mainAttributes(            
-            "FMLCorePlugin": coremod,
+            "FMLCorePlugin": "com.builtbroken.mc.patch.CoreMod",
             "FMLCorePluginContainsFMLMod": "true")
 }

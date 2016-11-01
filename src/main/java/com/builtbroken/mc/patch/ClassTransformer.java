@@ -25,19 +25,34 @@ public final class ClassTransformer implements IClassTransformer
 
 
     @Override
-    public byte[] transform(String name, String transformerName, byte[] bytes)
+    public byte[] transform(String clazz, String name, byte[] bytes)
     {
-        if (name.equals(CLASS_KEY_TILE_ENTITY))
+        try
         {
-            ClassNode cn = ASMUtility.startInjection(bytes);
-            injectInvalidateEdit(cn);
-            return ASMUtility.finishInjection(cn);
+            if (name.equals(CLASS_KEY_TILE_ENTITY))
+            {
+                ClassNode cn = ASMUtility.startInjection(name, bytes);
+                injectInvalidateEdit(cn);
+                return ASMUtility.finishInjection(name, cn);
+            }
+            else if (name.equals(CLASS_KEY_WORLD))
+            {
+                ClassNode cn = ASMUtility.startInjection(name, bytes);
+                injectNotifyBlockOfNeighborChange(cn);
+                return ASMUtility.finishInjection(name, cn);
+            }
         }
-        else if (name.equals(CLASS_KEY_WORLD))
+        catch (Exception e)
         {
-            ClassNode cn = ASMUtility.startInjection(bytes);
-            injectNotifyBlockOfNeighborChange(cn);
-            return ASMUtility.finishInjection(cn);
+            final String msg = "Unexpected error while patching '" + name +"' skipping patches for class. Expect issues....";
+            if(CoreMod.isDevMode())
+            {
+                throw new RuntimeException(msg, e);
+            }
+            else
+            {
+                CoreMod.logger.error(msg, e);
+            }
         }
         return bytes;
     }
@@ -45,7 +60,7 @@ public final class ClassTransformer implements IClassTransformer
     /** Fixes {@link net.minecraft.tileentity.TileEntityChest#invalidate()} causing inf loops on chunk edges */
     private void injectInvalidateEdit(ClassNode cn)
     {
-        final MethodNode method = ASMUtility.getMethod(cn, "invalidate", "()V");
+        final MethodNode method = ASMUtility.getMethod(cn, "invalidate", "func_145843_s");
 
         if (method != null)
         {
@@ -76,12 +91,16 @@ public final class ClassTransformer implements IClassTransformer
                 method.instructions.remove(checkForAdjacentChests);
             }
         }
+        else
+        {
+            CoreMod.logger.error("Failed to find 'public void invalidate()' in TileEntityChest.class");
+        }
     }
 
     /** Fixes {@link net.minecraft.world.World#notifyBlockOfNeighborChange(int, int, int, Block)} causing chunks to load */
     private void injectNotifyBlockOfNeighborChange(ClassNode cn)
     {
-        final MethodNode method = ASMUtility.getMethod(cn, "notifyBlockOfNeighborChange", "(IIILnet/minecraft/block/Block;)V");
+        final MethodNode method = ASMUtility.getMethod(cn, "notifyBlockOfNeighborChange", "func_147460_e");
 
         if (method != null)
         {
@@ -93,9 +112,13 @@ public final class ClassTransformer implements IClassTransformer
             edit.add(new VarInsnNode(ALOAD, 4));
             edit.add(new MethodInsnNode(INVOKESTATIC, HOOK_CLASS, "notifyBlockOfNeighborChange", "(Lnet/minecraft/world/World;IIILnet/minecraft/block/Block;)V", false));
             edit.add(new InsnNode(RETURN));
-            MethodInsnNode m = ASMUtility.getMethodeNode(method, "onNeighborBlockChange");
+            MethodInsnNode m = ASMUtility.getMethodeNode(method, "onNeighborBlockChange", "func_149695_a");
             method.instructions.insertBefore(m, edit);
             method.instructions.remove(m);
+        }
+        else
+        {
+            CoreMod.logger.error("Failed to find 'public void notifyBlockOfNeighborChange(int, int, int, Block)' in World.class");
         }
     }
 }

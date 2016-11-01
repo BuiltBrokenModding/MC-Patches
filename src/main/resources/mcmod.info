@@ -1,0 +1,18 @@
+[{
+    "modid": "mc-patch",
+    "name": "MC-Patch",
+    "description": "Core mod that patches issues inside of MC with ASM",
+    "version": "0.0.1",
+    "mcversion": "1.7.10",
+    "url": "http://builtbroken.com/",
+    "updateUrl": "",
+    "authors": ["DarkCow"],
+    "credits": "",
+    "logoFile": "",
+    "screenshots": [],
+    "parent": "",
+    "requiredMods": [],
+    "dependencies": [],
+    "dependants": [],
+    "useDependencyInformation": "false"
+}]

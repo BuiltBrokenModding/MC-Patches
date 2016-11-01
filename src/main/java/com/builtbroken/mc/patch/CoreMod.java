@@ -7,11 +7,12 @@ import org.apache.logging.log4j.Logger;
 import java.util.Map;
 
 /**
- * Core mod for Voltz Engine handing anything that needs to be done before mods load.
- * Created by Dark on 9/7/2015.
- * -Dfml.coreMods.load=com.builtbroken.mc.core.EngineCoreMod
+ * Core mod for loading ASM transformations
+ * Created by Dark on 10/9/2016.
+ * -Dfml.coreMods.load=com.builtbroken.mc.patch.CoreMod
  */
 @IFMLLoadingPlugin.MCVersion(value = "1.7.10")
+@IFMLLoadingPlugin.Name(value = "mc-patch")
 public class CoreMod implements IFMLLoadingPlugin
 {
     //TODO provide some kind of config to disable patches
@@ -19,6 +20,11 @@ public class CoreMod implements IFMLLoadingPlugin
 
     /** Grab the mod's main logger, in theory should be the same logger */
     public static final Logger logger = LogManager.getLogger("BBM-MC-PATCHER");
+
+    public CoreMod()
+    {
+        logger.info("CoreMod has been created");
+    }
 
     @Override
     public String[] getASMTransformerClass()

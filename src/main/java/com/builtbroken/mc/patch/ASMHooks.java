@@ -30,6 +30,7 @@ public final class ASMHooks
     {
         try
         {
+            //System.out.println("chestInvalidate(" + chest + ")");
             if (!chest.adjacentChestChecked)
             {
                 World world = chest.getWorldObj();
@@ -83,6 +84,7 @@ public final class ASMHooks
                 chest.adjacentChestXNeg.adjacentChestChecked = false;
                 chest.adjacentChestXPos = null;
             }
+            //System.out.println("\t done (" + chest + ")");
         }
         catch (Exception e)
         {
@@ -96,6 +98,7 @@ public final class ASMHooks
      */
     public static void notifyBlockOfNeighborChange(World world, int x, int y, int z, Block block1)
     {
+        //System.out.println("notifyBlockOfNeighborChange(" + world + ", " + x + ", " + y + ", " + z + ", " + block1 + ")");
         Block block = getBlock(world, x, y, z);
         if (block != null)
         {
@@ -138,6 +141,7 @@ public final class ASMHooks
                 throw new ReportedException(crashreport);
             }
         }
+        //System.out.println("\t done (" + world + ", " + x + ", " + y + ", " + z + ", " + block1 + ")");
     }
 
     private static boolean getBlock(TileEntityChest chest, World world, int x, int y, int z)

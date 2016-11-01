@@ -87,8 +87,9 @@ public final class ASMUtility
      * @param bytes
      * @return
      */
-    public static ClassNode startInjection(byte[] bytes)
+    public static ClassNode startInjection(String name, byte[] bytes)
     {
+        CoreMod.logger.info("Starting injection process for " + name);
         final ClassNode node = new ClassNode();
         final ClassReader reader = new ClassReader(bytes);
         reader.accept(node, 0);
@@ -101,8 +102,9 @@ public final class ASMUtility
      * @param node
      * @return
      */
-    public static byte[] finishInjection(ClassNode node)
+    public static byte[] finishInjection(String name, ClassNode node)
     {
+        CoreMod.logger.info("Ending injection process for " + name);
         final ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         node.accept(writer);
         byte[] data = writer.toByteArray();
@@ -148,16 +150,22 @@ public final class ASMUtility
      * @param sig
      * @return
      */
-    public static MethodNode getMethod(ClassNode node, String name, String sig)
+    public static MethodNode getMethod(ClassNode node, String name, String name2, String sig)
     {
         for (MethodNode methodNode : node.methods)
         {
-            if (methodNode.name.equals(name) && methodNode.desc.equals(sig))
+            ObfMapping mapping = new ObfMapping(node.name, methodNode.name, methodNode.desc).toRuntime();
+            if ((mapping.s_name.equals(name) || mapping.s_name.equals(name2)) && (sig == null || mapping.s_desc.equals(sig) || methodNode.desc.equals(sig)))
             {
                 return methodNode;
             }
         }
         return null;
+    }
+
+    public static MethodNode getMethod(ClassNode node, String name, String name2)
+    {
+        return getMethod(node, name, name2, null);
     }
 
     /**
@@ -170,15 +178,21 @@ public final class ASMUtility
      * @param name   - name of the method call
      * @return
      */
-    public static MethodInsnNode getMethodeNode(MethodNode method, String name)
+    public static MethodInsnNode getMethodeNode(MethodNode method, String name, String name2)
     {
         ListIterator<AbstractInsnNode> it = method.instructions.iterator();
         while (it.hasNext())
         {
             AbstractInsnNode next = it.next();
-            if (next instanceof MethodInsnNode && ((MethodInsnNode) next).name.equals(name))
+
+            if (next instanceof MethodInsnNode)
             {
-                return (MethodInsnNode) next;
+                MethodInsnNode mnode = (MethodInsnNode) next;
+                ObfMapping mapping = new ObfMapping(mnode.owner, mnode.name, mnode.desc).toRuntime();
+                if (mapping.s_name.equals(name) || mapping.s_name.equals(name2))
+                {
+                    return (MethodInsnNode) next;
+                }
             }
         }
         System.out.println("Instructions for method " + method.name);

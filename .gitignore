@@ -4,3 +4,4 @@ runMCPatches/
 CompiledWith.txt
 MC-Patch.txt
 output/
+build/
